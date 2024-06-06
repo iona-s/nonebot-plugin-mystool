@@ -96,13 +96,15 @@ async def _(event: Union[GeneralMessageEvent], matcher: Matcher, state: T_State,
         )
     )
     user_setting += f"\n\n5️⃣ 实时便笺体力提醒：{'开' if account.enable_resin else '关'}"
-    user_setting += f"\n6️⃣更改便笺体力提醒阈值 \
+    user_setting += f"\n6️⃣更改便笺提醒阈值 \
                       \n   当前原神提醒阈值：{account.user_resin_threshold} \
                       \n   当前崩铁提醒阈值：{account.user_stamina_threshold}"
-    user_setting += "\n7️⃣设置微博相关功能"
-    user_setting += "\n8️⃣⚠️删除账户数据"
+    user_setting += f"\n7️⃣更改每周开始提醒崩铁模拟宇宙积分完成情况的期限 \
+                      \n   当前会在每周{account.user_su_notice_start_weekday}开始提醒模拟宇宙积分完成情况"
+    user_setting += "\n8️⃣设置微博相关功能"
+    user_setting += "\n9️⃣⚠️删除账户数据"
 
-    await account_setting.send(user_setting + '\n\n您要更改哪一项呢？请发送 1 / 2 / 3 / 4 / 5 / 6 / 7/ 8'
+    await account_setting.send(user_setting + '\n\n您要更改哪一项呢？请发送 1 / 2 / 3 / 4 / 5 / 6 / 7 / 8 / 9'
                                               '\n🚪发送“退出”即可退出')
 
 
@@ -155,7 +157,14 @@ async def _(event: Union[GeneralMessageEvent], state: T_State, setting_id=ArgStr
         )
         state["setting_item"] = "setting_notice_value"
         return
-    elif setting_id == "7":
+    elif setting_id == '7':
+        await account_setting.send(
+            "请发送想要更改每周开始提醒崩铁模拟宇宙积分完成情况的期限："
+            "\n1对应周一，2对应周二，以此类推"
+            "\n\n🚪发送“退出”即可退出"
+        )
+        state["setting_item"] = "setting_su_notice_value"
+    elif setting_id == "8":
         user: UserData = state["user"]
         msg = ""
         msg += "请发送想要设置的微博功能开关或账号："
@@ -172,7 +181,7 @@ async def _(event: Union[GeneralMessageEvent], state: T_State, setting_id=ArgStr
         await account_setting.send(msg)
         state["setting_item"] = "weibo_value"
         return
-    elif setting_id == '8':
+    elif setting_id == '9':
         state["prepare_to_delete"] = True
         await account_setting.reject(f"⚠️确认删除账号 {account.display_name} ？发送 \"确认删除\" 以确定。")
     elif setting_id == '确认删除' and state["prepare_to_delete"]:
@@ -193,10 +202,10 @@ async def _(_: Union[GeneralMessageEvent], state: T_State, notice_game=ArgStr())
         if notice_game == "1":
             await account_setting.send(
                 "请输入想要所需通知阈值，树脂达到该值时将进行通知："
-                "可用范围 [0, 160]"
+                "可用范围 [0, 200]"
                 "\n\n🚪发送“退出”即可退出"
             )
-            state["setting_item"] = "setting_notice_value_op"
+            state["setting_item"] = "setting_notice_value_ys"
         elif notice_game == "2":
             await account_setting.send(
                 "请输入想要所需阈值数字，开拓力达到该值时将进行通知："
@@ -233,20 +242,20 @@ async def _(_: Union[GeneralMessageEvent], state: T_State, setting_value=ArgStr(
         await account_setting.finish('🚪已成功退出')
     account: UserAccount = state['account']
 
-    if state["setting_item"] == "setting_notice_value_op":
+    if state["setting_item"] == "setting_notice_value_ys":
         try:
             resin_threshold = int(setting_value)
         except ValueError:
             await account_setting.reject("⚠️请输入有效的数字。")
         else:
-            if 0 <= resin_threshold <= 160:
+            if 0 <= resin_threshold <= 200:
                 # 输入有效的数字范围，将 resin_threshold 赋值为输入的整数
                 account.user_resin_threshold = resin_threshold
                 PluginDataManager.write_plugin_data()
                 await account_setting.finish("更改原神便笺树脂提醒阈值成功\n"
                                              f"⏰当前提醒阈值：{resin_threshold}")
             else:
-                await account_setting.reject("⚠️输入的数字范围应在 0 到 160 之间。")
+                await account_setting.reject("⚠️输入的数字范围应在 0 到 200 之间。")
 
     elif state["setting_item"] == "setting_notice_value_sr":
         try:
@@ -262,6 +271,21 @@ async def _(_: Union[GeneralMessageEvent], state: T_State, setting_value=ArgStr(
                                              f"⏰当前提醒阈值：{stamina_threshold}")
             else:
                 await account_setting.reject("⚠️输入的数字范围应在 0 到 240 之间。")
+
+    elif state["setting_item"] == "setting_su_notice_value":
+        try:
+            su_notice_start_weekday = int(setting_value)
+        except ValueError:
+            await account_setting.reject("⚠️请输入有效的数字。")
+        else:
+            if 1 <= su_notice_start_weekday <= 7:
+                # 输入有效的数字范围，将 su_notice_start_weekday 赋值为输入的整数
+                account.user_su_notice_start_weekday = su_notice_start_weekday
+                PluginDataManager.write_plugin_data()
+                await account_setting.finish("更改每周开始提醒崩铁模拟宇宙积分完成情况的期限成功\n"
+                                             f"⏰当前会在每周{su_notice_start_weekday}开始提醒模拟宇宙积分完成情况")
+            else:
+                await account_setting.reject("⚠️输入的数字范围应在 1 到 7 之间。")
 
     elif state["setting_item"] == "mission_games":
         games_input = setting_value.split()

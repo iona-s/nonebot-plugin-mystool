@@ -1,6 +1,7 @@
 import asyncio
 import threading
 from typing import Union, Optional, Iterable, Dict
+from datetime import datetime
 
 from nonebot import on_command, get_adapters
 from nonebot.adapters.onebot.v11 import MessageSegment as OneBotV11MessageSegment, Adapter as OneBotV11Adapter, \
@@ -518,7 +519,7 @@ async def genshin_note_check(user: UserData, user_ids: Iterable[str], matcher: M
                 if note.current_resin >= account.user_resin_threshold:
                     # 防止重复提醒
                     if not genshin_notice.current_resin_full:
-                        if note.current_resin == 160:
+                        if note.current_resin == 200:
                             genshin_notice.current_resin_full = True
                             msg += '❕您的树脂已经满啦\n'
                             do_notice = True
@@ -560,7 +561,7 @@ async def genshin_note_check(user: UserData, user_ids: Iterable[str], matcher: M
 
             msg += "❖原神·实时便笺❖" \
                    f"\n🆔账户 {account.display_name}" \
-                   f"\n⏳树脂数量：{note.current_resin} / 160" \
+                   f"\n⏳树脂数量：{note.current_resin} / 200" \
                    f"\n⏱️树脂{note.resin_recovery_text}" \
                    f"\n🕰️探索派遣：{note.current_expedition_num} / {note.max_expedition_num}" \
                    f"\n📅每日委托：{4 - note.finished_task_num} 个任务未完成" \
@@ -624,7 +625,10 @@ async def starrail_note_check(user: UserData, user_ids: Iterable[str], matcher: 
                     starrail_notice.current_stamina_full = False
 
                 # 每周模拟宇宙积分提醒
-                if note.current_rogue_score != note.max_rogue_score:
+                if (
+                        note.current_rogue_score != note.max_rogue_score and
+                        datetime.now().weekday() + 1 >= account.user_su_notice_start_weekday
+                ):
                     if plugin_config.preference.notice_time:
                         msg += '❕您的模拟宇宙积分还没打满\n\n'
                         do_notice = True
@@ -697,7 +701,7 @@ async def weibo_code_check(user: UserData, user_ids: Iterable[str], matcher: Mat
     """
 
     if user.enable_weibo:
-        # account = UserAccount(account) 
+        # account = UserAccount(account)
         for user_data in user.weibo:
             msg, img = None, None
             weibo = WeiboCode(user_data)
