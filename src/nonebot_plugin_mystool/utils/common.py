@@ -305,7 +305,7 @@ async def get_file(url: str, retry: bool = True):
 
     :param url: 文件URL
     :param retry: 是否允许重试
-    :return: 文件数据
+    :return: 文件数据，若下载失败则返回 ``None``
     """
     try:
         async for attempt in get_async_retry(retry):
@@ -315,6 +315,7 @@ async def get_file(url: str, retry: bool = True):
                 return res.content
     except tenacity.RetryError:
         logger.exception(f"{plugin_config.preference.log_head}下载文件 - {url} 失败")
+        return None
 
 
 def blur_phone(phone: Union[str, int]) -> str:

@@ -2,6 +2,7 @@ import copy
 import json
 import random
 import re
+import time
 from datetime import date
 from urllib.parse import unquote
 
@@ -53,7 +54,8 @@ class WeiboCode:
         """params: s=xxxxxx; gsid=xxxxxx; aid=xxxxxx; from=xxxxxx"""
         self.cookie = Tool.cookie_to_dict(user_data['cookie'])
         self.container_id = {'原神': '100808fc439dedbb06ca5fd858848e521b8716',
-                             '崩铁': '100808e1f868bf9980f09ab6908787d7eaf0f0'}
+                             '崩铁': '100808e1f868bf9980f09ab6908787d7eaf0f0',
+                             '绝区零': '100808f303ad099b7730ad1f96ff49726d3ff3'}
         self.ua = 'WeiboOverseas/4.4.6 (iPhone; iOS 14.0.1; Scale/2.00)'
         self.headers = {'User-Agent': self.ua}
         self.follow_data_url = 'https://api.weibo.cn/2/cardlist'
@@ -106,16 +108,16 @@ class WeiboCode:
         else:
             return '获取失败，请重新设置wb_cookie'
 
-    async def get_code_list(self):
-        ticket_id = await self.get_ticket_id  # 有活动则返回一个dict，没活动则返回一个str
-        '''
+    async def get_code_list(self, ticket_id):
+        # ticket_id = await self.get_ticket_id  # 有活动则返回一个dict，没活动则返回一个str
+        """
         ticket_id = {
             '原神/崩铁': {
                 'id': [],
                 'img': ''
             }
         }
-        '''
+        """
         if isinstance(ticket_id, dict):
             msg = ""
             code = {key: [] for key in ticket_id.keys()}
@@ -133,7 +135,7 @@ class WeiboCode:
                        "\n2️⃣" \
                        f"  \n{values[1]}" \
                        "\n3️⃣" \
-                       f"  \n{values[2]}"
+                       f"  \n{values[2]}\n"
             return msg, img
         else:
             return ticket_id
@@ -202,6 +204,7 @@ class WeiboSign:
                 "cout": 20,
             }
             params.update(params_data)
+            params['ul_ctime'] = int(time.time() * 1000)
             headers = {
                 "User-Agent": "Mi+10_12_WeiboIntlAndroid_6020",
                 "Host": "api.weibo.cn"
@@ -217,6 +220,8 @@ class WeiboSign:
             return '找不到超话列表'
         except IndexError:
             return '超话列表为空'
+        except ValueError:
+            return '可能是微博相关参数出错，请重新设置'
         except Exception as e:
             # print(f'{type(e)}: {e}')
             return e
@@ -232,36 +237,54 @@ class WeiboSign:
         }
 
         param_d = Tool.cookie_to_dict(wb_userdata['params'])
+        cookie = Tool.cookie_to_dict(wb_userdata['cookie'])
 
         params = {
-            "gsid": param_d['gsid'] if 'gsid' in param_d else None,  # 账号身份验证
-            "s": param_d['s'] if 's' in param_d else None,  # 校验参数
-            "from": param_d['from'] if 'from' in param_d else None,  # 客户端身份验证
-            "c": param_d['c'] if 'c' in param_d else None,  # 客户端身份验证
-            "aid": param_d['aid'] if 'aid' in param_d else None,  # 作用未知
+            "gsid": None,  # 账号身份验证
+            "s": None,  # 校验参数
+            "from": None,  # 客户端身份验证
+            "c": None,  # 客户端身份验证
+            "aid": None,  # 作用未知
+            "ua": "Xiaomi-Mi%2010__weibo__14.2.2__android__android12"
         }
+        params.update(param_d)
 
         msg = f'{date.today()}\n' \
               '微博超话签到：\n'
         try:
-            chaohua_list = await cls.ch_list(params, wb_userdata)
+            chaohua_list = await WeiboSign.ch_list(params, wb_userdata)
             if not isinstance(chaohua_list, list):
                 return f'签到失败请重新签到\n{chaohua_list}'
+            is_geetest = False
             for ch in chaohua_list:
+                if is_geetest:
+                    break
                 params_copy = copy.deepcopy(params)
                 if ch['is_sign'] == '签到':
                     params_copy['request_url'] = request_url.format(containerid=ch['id'])
-                    async with httpx.AsyncClient() as client:
-                        res = await client.get(url, headers=headers, params=params_copy, timeout=10)
-                    res_data = json.loads(res.text)
-                    if 'msg' in res_data and 'errmsg' not in res_data:  # 今日首次签到成功
-                        msg += f"{ch['title_sub']}  ✅\n"
-                    elif 'errmsg' in res_data:  # 签到出错
-                        # msg = f"{res_data['errmsg']}\n"
-                        msg += f"{ch['title_sub']}  ❌\n"
-                        msg += f"--{res_data['errmsg']}\n"
+                    params_copy['ul_ctime'] = int(time.time() * 1000)
+                    pd = True
+                    while pd:
+                        async with httpx.AsyncClient() as client:
+                            res = await client.get(url, headers=headers, cookies=cookie, params=params_copy, timeout=10)
+                        res_data = json.loads(res.text)
+                        logger.info(f'微博签到返回：{res_data}')
+                        if str(res_data.get('result')) == '402004':
+                            msg += '点击链接进行验证后再次签到\n'
+                            msg += res_data.get('scheme')
+                            is_geetest = True
+                            break
+                        elif str(res_data.get('errno')) == '402003':
+                            continue
+                        elif str(res_data.get('result')) == '1':
+                            msg += f"{ch['title_sub']}  ✅\n"
+                            pd = False
+                        else:
+                            msg += f"{ch['title_sub']}  ❌\n"
+                            msg += f"--{res_data['errmsg'] if res_data.get('errmsg') else res_data['msg']}\n"
+                            pd = False
                 elif ch['is_sign'] == '已签':  # 今日再次进行签到，且之前已经签到成功
                     msg += f"{ch['title_sub']}  ✅\n"
             return msg
         except Exception as e:
-            return f'签到失败请重新签到,{e}'
+            return f'签到失败请重新签到\n{type(e).__name__}:{e}'

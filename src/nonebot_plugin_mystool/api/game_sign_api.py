@@ -12,7 +12,7 @@ from ..utils import logger, generate_ds, \
     get_async_retry
 
 __all__ = ["BaseGameSign", "GenshinImpactSign", "HonkaiImpact3Sign", "HoukaiGakuen2Sign", "TearsOfThemisSign",
-           "StarRailSign"]
+           "StarRailSign", "ZenlessZoneZeroSign"]
 
 
 class BaseGameSign:
@@ -272,8 +272,28 @@ class StarRailSign(BaseGameSign):
     game_id = 6
 
 
+class ZenlessZoneZeroSign(BaseGameSign):
+    """
+    绝区零 游戏签到
+    """
+    name = "绝区零"
+    act_id = "e202406242138391"
+    game_id = 8
+    url_reward = "https://act-nap-api.mihoyo.com/event/luna/zzz/home"
+    url_info = "https://act-nap-api.mihoyo.com/event/luna/zzz/info"
+    url_sign = "https://act-nap-api.mihoyo.com/event/luna/zzz/sign"
+    headers_general = BaseGameSign.headers_general.copy()
+    headers_reward = BaseGameSign.headers_reward.copy()
+    for headers in headers_general, headers_reward:
+        headers["x-rpc-signgame"] = "zzz"
+        headers["Origin"] = "https://act.mihoyo.com"
+        headers["Referer"] = "https://act.mihoyo.com/"
+        headers["Host"] = "act-nap-api.mihoyo.com"
+
+
 BaseGameSign.available_game_signs.add(GenshinImpactSign)
 BaseGameSign.available_game_signs.add(HonkaiImpact3Sign)
 BaseGameSign.available_game_signs.add(HoukaiGakuen2Sign)
 BaseGameSign.available_game_signs.add(TearsOfThemisSign)
 BaseGameSign.available_game_signs.add(StarRailSign)
+BaseGameSign.available_game_signs.add(ZenlessZoneZeroSign)
