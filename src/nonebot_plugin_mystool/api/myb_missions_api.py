@@ -118,8 +118,10 @@ class BaseMission:
         :return: (BaseApiStatus, 签到获得的米游币数量)
         """
         content = {"gids": self.gids}
+        retrying = get_async_retry(retry)
+        retrying.retry = retrying.retry and tenacity.retry_if_result(lambda x: x is None)
         try:
-            async for attempt in get_async_retry(retry):
+            async for attempt in retrying:
                 with attempt:
                     headers = HEADERS_OLD.copy()
                     headers["x-rpc-device_id"] = self.account.device_id_android

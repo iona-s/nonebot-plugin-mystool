@@ -4,6 +4,7 @@ import random
 import re
 import time
 from datetime import date
+from typing import Dict, Any
 from urllib.parse import unquote
 
 import httpx
@@ -120,6 +121,7 @@ class WeiboCode:
         """
         if isinstance(ticket_id, dict):
             msg = ""
+            img = None
             code = {key: [] for key in ticket_id.keys()}
             for key, value in ticket_id.items():
                 for k, v in value.items():
@@ -212,7 +214,7 @@ class WeiboSign:
             cookies = Tool.cookie_to_dict(wb_userdata['cookie'])
             async with httpx.AsyncClient() as client:
                 res = await client.get(url, headers=headers, params=params, cookies=cookies)
-            json_chdata = json.load(res)['cards'][0]['card_group']
+            json_chdata = res.json()['cards'][0]['card_group']
             list_data = await cls.format_chaohua_data(json_chdata)
             wb_userdata['CHdata_list'] = list_data
             return list_data
@@ -239,7 +241,7 @@ class WeiboSign:
         param_d = Tool.cookie_to_dict(wb_userdata['params'])
         cookie = Tool.cookie_to_dict(wb_userdata['cookie'])
 
-        params = {
+        params: Dict[str, Any] = {
             "gsid": None,  # 账号身份验证
             "s": None,  # 校验参数
             "from": None,  # 客户端身份验证

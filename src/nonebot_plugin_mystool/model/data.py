@@ -242,6 +242,15 @@ class UserAccount(BaseModelWithSetter):
     '''是否开启便笺提醒'''
     platform: Literal["ios", "android"] = "ios"
     '''设备平台'''
+    game_sign_games: List[str] = [
+        "GenshinImpact",
+        "HonkaiImpact3",
+        "HoukaiGakuen2",
+        "TearsOfThemis",
+        "StarRail",
+        "ZenlessZoneZero"
+    ]
+    '''允许签到的游戏列表'''
     mission_games: List[str] = ["BBSMission"]
     '''在哪些板块执行米游币任务计划 为 BaseMission 子类名称'''
     user_stamina_threshold: int = 240

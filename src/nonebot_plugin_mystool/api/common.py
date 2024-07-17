@@ -303,7 +303,7 @@ HEADERS_STARRAIL_STATUS_WIDGET = {
     "Host": "api-takumi-record.mihoyo.com"
 }
 
-IncorrectReturn = (KeyError, TypeError, AttributeError, IndexError, ValidationError)
+IncorrectReturn = (KeyError, TypeError, AttributeError, IndexError, ValidationError, json.decoder.JSONDecodeError)
 """米游社API返回数据无效会触发的异常组合"""
 
 
