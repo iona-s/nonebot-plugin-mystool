@@ -151,12 +151,20 @@ class BaseMission:
                         logger.debug(f"网络请求返回: {res.text}")
                         if plugin_config.preference.geetest_url or user.geetest_url:
                             create_status, mmt_data = await create_verification(self.account)
+                            logger.debug(
+                                "米游币任务 - 讨论区签到: "
+                                f"用户 {self.account.display_name} 创建了人机验证任务，mmt_data: {mmt_data}"
+                            )
                             if create_status:
                                 if geetest_result := await get_validate(user, mmt_data.gt, mmt_data.challenge):
                                     if await verify_verification(mmt_data, geetest_result, self.account):
                                         logger.success(
                                             f"米游币任务 - 讨论区签到: 用户 {self.account.display_name} 人机验证通过")
                                         continue
+                                logger.debug(
+                                    "米游币任务 - 讨论区签到: "
+                                    f"用户 {self.account.display_name} 人机验证失败，geetest_result: {geetest_result}"
+                                )
                         else:
                             logger.info(
                                 f"米游币任务 - 讨论区签到: 用户 {self.account.display_name} 未配置极验人机验证打码平台")

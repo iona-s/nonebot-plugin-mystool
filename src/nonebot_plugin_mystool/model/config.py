@@ -97,8 +97,8 @@ class Preference(BaseModel):
     """是否启用管理员名单"""
     admin_list_path: Optional[Path] = data_path / "admin_list.txt"
     """管理员名单文件路径"""
-    game_token_app_id: str = "1"
-    """米游社二维码登录的应用标识符（可用的任何值都没有区别，但是必须传递此参数）"""
+    game_token_app_id: str = "2"
+    """米游社二维码登录的应用标识符"""
     qrcode_query_interval: float = 1
     """检查米游社登录二维码扫描情况的请求间隔（单位：秒）"""
     qrcode_wait_time: float = 120

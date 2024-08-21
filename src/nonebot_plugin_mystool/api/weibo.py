@@ -185,13 +185,16 @@ class WeiboSign:
         data = [ch for ch in data if ch.get('card_type') == '8']
         chaohua_list = []
         for onedata in data:
-            ch_id = re.findall("(?<=containerid=).*?(?=&)", onedata['scheme'])
-            one_dict = {
-                'title_sub': onedata['title_sub'],
-                'id': ch_id[0],
-                'is_sign': onedata['buttons'][0]['name']  # '已签' / '签到'
-            }
-            chaohua_list.append(one_dict)
+            try:
+                ch_id = re.findall("(?<=containerid=)[^&]+", onedata['scheme'])
+                one_dict = {
+                    'title_sub': onedata.get('title_sub', None),
+                    'id': ch_id[0] if ch_id else None,
+                    'is_sign': onedata['buttons'][0]['name'] if onedata.get('buttons') else None # '已签' / '签到'
+                }
+                chaohua_list.append(one_dict)
+            except Exception as e:
+                logger.error(f"{type(e)}:{e}")
         return chaohua_list
 
     @classmethod

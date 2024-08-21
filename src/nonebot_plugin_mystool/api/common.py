@@ -1688,7 +1688,7 @@ async def verify_verification(
 
 async def fetch_game_token_qrcode(
         device_id: str,
-        app_id: str = "1",
+        app_id: str,
         retry: bool = True
 ) -> Tuple[BaseApiStatus, Optional[Tuple[str, str]]]:
     """

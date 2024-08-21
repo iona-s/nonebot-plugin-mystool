@@ -247,13 +247,13 @@ async def get_validate(user: UserData, gt: str = None, challenge: str = None, re
             return GeetestResult("", "")
         geetest_url = user.geetest_url
         params = {"gt": gt, "challenge": challenge}
-        params.update(user.geetest_params)
+        params.update(user.geetest_params or {})
     else:
         if not (gt and challenge) or not plugin_config.preference.geetest_url:
             return GeetestResult("", "")
         geetest_url = plugin_config.preference.geetest_url
         params = {"gt": gt, "challenge": challenge}
-        params.update(plugin_config.preference.geetest_params)
+        params.update(plugin_config.preference.geetest_params or {})
     content = deepcopy(plugin_config.preference.geetest_json or Preference().geetest_json)
     for key, value in content.items():
         if isinstance(value, str):
