@@ -6,9 +6,8 @@ from nonebot.matcher import Matcher
 from nonebot.params import T_State
 
 from ..api import BaseMission, BaseGameSign
-from ..api.weibo import Tool
 from ..command.common import CommandRegistry
-from ..model import PluginDataManager, plugin_config, UserAccount, CommandUsage, UserData
+from ..model import PluginDataManager, plugin_config, UserAccount, CommandUsage
 from ..utils import COMMAND_BEGIN, GeneralMessageEvent
 
 __all__ = ["setting", "account_setting", "global_setting"]
@@ -110,8 +109,7 @@ async def _(event: Union[GeneralMessageEvent], matcher: Matcher, state: T_State,
                       \n   当前崩铁提醒阈值：{account.user_stamina_threshold}"
     user_setting += "\n8️⃣更改每周开始提醒崩铁模拟宇宙积分完成情况的期限 \
                       \n   当前会在每周{account.user_su_notice_start_weekday}开始提醒模拟宇宙积分完成情况"
-    user_setting += "\n9️⃣设置微博相关功能"
-    user_setting += "\n1️⃣0️⃣⚠️删除账户数据"
+    user_setting += "\n9️⃣⚠️删除账户数据"
 
     await account_setting.send(user_setting + '\n\n您要更改哪一项呢？请发送 1 / 2 / 3 / 4 / 5 / 6 / 7 / 8 / 9 / 10'
                                               '\n🚪发送“退出”即可退出')
@@ -183,26 +181,7 @@ async def _(event: Union[GeneralMessageEvent], state: T_State, setting_id=ArgStr
             "\n\n🚪发送“退出”即可退出"
         )
         state["setting_item"] = "setting_su_notice_value"
-    elif setting_id == "9":
-        user: UserData = state["user"]
-        msg = ""
-        msg += "请发送想要设置的微博功能开关或账号："
-        msg += f"\n1. 微博签到与兑换：{'开' if user.enable_weibo else '关'}"
-        count = 1
-        if len(user.weibo) > 0:
-            for users in user.weibo:
-                for k_u, v_u in users.items():
-                    if k_u == 'name':
-                        count += 1
-                        msg += f"\n{count}. {str(v_u)}"
-        msg += "\n发送“添加账号”或已有账号名称进行添加/修改"
-        msg += "\n发送“删除账号”进行账号删除"
-        msg += "\n\n🚪发送“退出”即可退出"
-        await account_setting.send(msg)
-        state["setting_item"] = "setting_wbitem"
-        state["notice_game"] = ""
-        return
-    elif setting_id == '10':
+    elif setting_id == '9':
         state["prepare_to_delete"] = True
         await account_setting.reject(f"⚠️确认删除账号 {account.display_name} ？发送 \"确认删除\" 以确定。")
     elif setting_id == '确认删除' and state["prepare_to_delete"]:
@@ -212,7 +191,6 @@ async def _(event: Union[GeneralMessageEvent], state: T_State, setting_id=ArgStr
     else:
         await account_setting.reject("⚠️您的输入有误，请重新输入")
     state["notice_game"] = ""
-    state["setting_wb"] = ""
 
 
 @account_setting.got('notice_game')
@@ -236,56 +214,6 @@ async def _(_: Union[GeneralMessageEvent], state: T_State, notice_game=ArgStr())
             state["setting_item"] = "setting_notice_value_sr"
         else:
             await account_setting.reject("⚠️您的输入有误，请重新输入")
-        state["setting_wb"] = ""
-
-
-@account_setting.got('setting_wb')
-async def _(_: Union[GeneralMessageEvent], state: T_State, setting_wb=ArgStr()):
-    if setting_wb == '退出':
-        await account_setting.finish('🚪已成功退出')
-
-    if state["setting_item"] == "setting_wbitem":
-        user: UserData = state["user"]
-        if setting_wb == "1":
-            user.enable_weibo = not user.enable_weibo
-            PluginDataManager.write_plugin_data()
-            await account_setting.finish(f"微博签到与兑换功能已 {'✅开启' if user.enable_weibo else '❌关闭'}")
-        elif setting_wb == '添加账号':
-            await account_setting.send(
-                "参数说明：\n"
-                "  cookie必填SUB,SUBP\n"
-                "  params必填s,gsid,aid,from\n"
-                "  参数以 ; 相连\n"
-                "  如 xxx: a=x;b=x;\n"
-                "发送以下格式进行添加：\n"
-                "name:名称|cookie:xxx|params:xxx\n\n"
-                "🚪发送“退出”即可退出"
-            )
-            state["setting_item"] = "setting_weibo_account"
-        elif setting_wb == '删除账号':
-            msg = ""
-            for usr in user.weibo:
-                msg += f"{usr['name']}\n"
-
-            await account_setting.send(
-                "选择想要删除的账号：\n"
-                f"{msg}\n"
-                "🚪发送“退出”即可退出"
-            )
-            state["setting_item"] = "del_weibo_account"
-        else:
-            await account_setting.send(
-                "更新账号：\n"
-                "  cookie必填SUB,SUBP\n"
-                "  params必填s,gsid,aid,from,c\n"
-                "  参数以 ; 相连\n"
-                "  如 xxx: a=x;b=x;\n"
-                "发送以下格式进行添加：\n"
-                "cookie和params选填，name必填\n"
-                "name:名称|(cookie:xxx)|(params:xxx)\n\n"
-                "🚪发送“退出”即可退出"
-            )
-            state["setting_item"] = "setting_weibo_account"
 
 
 @account_setting.got('setting_value')
@@ -372,31 +300,6 @@ async def _(_: Union[GeneralMessageEvent], state: T_State, setting_value=ArgStr(
         PluginDataManager.write_plugin_data()
         setting_value = setting_value.replace(" ", "、")
         await account_setting.finish(f"💬执行米游币任务的频道已更改为『{setting_value}』")
-
-    # 做区分，以下应用在用户数据中，而非米游社数据中
-    elif state["setting_item"] == "setting_weibo_account":
-        user: UserData = state["user"]
-        userdata_dict = Tool.weibo_user_dict(setting_value)
-        if len(user.weibo) > 0:
-            for usr in user.weibo:
-                if usr['name'] == userdata_dict['name']:
-                    usr.update(userdata_dict)
-                else:
-                    user.weibo.append(userdata_dict)
-        elif len(user.weibo) == 0:
-            user.weibo.append(userdata_dict)
-        PluginDataManager.write_plugin_data()
-        await account_setting.finish(f"{userdata_dict['name']}微博账号设置成功")
-
-    elif state["setting_item"] == "del_weibo_account":
-        user: UserData = state["user"]
-        if len(user.weibo) > 0:
-            print(user.weibo)
-            for usr in user.weibo:
-                if usr['name'] == setting_value:
-                    user.weibo.remove(usr)
-            PluginDataManager.write_plugin_data()
-            await account_setting.finish(f"{setting_value}微博账号成功删除")
 
 
 global_setting = on_command(plugin_config.preference.command_start + '通知设置', priority=5, block=True)

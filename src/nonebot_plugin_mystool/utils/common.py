@@ -261,21 +261,19 @@ async def get_validate(user: UserData, gt: str = None, challenge: str = None, re
     debug_log = {"geetest_url": geetest_url, "params": params, "content": content}
     logger.debug(f"{plugin_config.preference.log_head}get_validate: {debug_log}")
     try:
-        async for attempt in get_async_retry(retry):
-            with attempt:
-                async with httpx.AsyncClient() as client:
-                    res = await client.post(
-                        geetest_url,
-                        params=params,
-                        json=content,
-                        timeout=60
-                    )
-                geetest_data = res.json()
-                logger.debug(f"{plugin_config.preference.log_head}人机验证结果：{geetest_data}")
-                validate = geetest_data['data']['validate']
-                seccode = geetest_data['data'].get('seccode') or f"{validate}|jordan"
-                return GeetestResult(validate=validate, seccode=seccode)
-    except tenacity.RetryError:
+        async with httpx.AsyncClient() as client:
+            res = await client.post(
+                geetest_url,
+                params=params,
+                json=content,
+                timeout=60
+            )
+        geetest_data = res.json()
+        logger.debug(f"{plugin_config.preference.log_head}人机验证结果：{geetest_data}")
+        validate = geetest_data['data']['validate']
+        seccode = geetest_data['data'].get('seccode') or f"{validate}|jordan"
+        return GeetestResult(validate=validate, seccode=seccode)
+    except Exception:
         logger.exception(f"{plugin_config.preference.log_head}获取人机验证validate失败")
 
 

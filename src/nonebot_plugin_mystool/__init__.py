@@ -26,8 +26,6 @@ __plugin_meta__ = PluginMetadata(
     f"\n🎁 {_command_begin}商品 ➢ 查看米游币商品信息(商品ID)"
     f"\n📊 {_command_begin}原神便笺 ➢ 查看原神实时便笺(原神树脂、洞天财瓮等)"
     f"\n📊 {_command_begin}铁道便笺 ➢ 查看星穹铁道实时便笺(开拓力、每日实训等)"
-    f"\n👁️‍🗨️ {_command_begin}wb签到 ➢ 手动进行微博超话签到(每日定时:游戏签到后1h)"
-    f"\n👁️‍🗨️ {_command_begin}wb兑换 ➢ 查看微博本期超话签到的兑换码(暂支持原神和星穹铁道)"
     f"\n⚙️ {_command_begin}设置 ➢ 设置是否开启通知、每日任务等相关选项"
     f"\n🔑 {_command_begin}账号设置 ➢ 设置设备平台、是否开启每日计划任务、频道任务"
     f"\n🔔 {_command_begin}通知设置 ➢ 设置是否开启每日米游币任务、游戏签到的结果通知"
