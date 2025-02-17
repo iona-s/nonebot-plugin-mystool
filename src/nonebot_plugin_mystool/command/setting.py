@@ -107,7 +107,7 @@ async def _(event: Union[GeneralMessageEvent], matcher: Matcher, state: T_State,
     user_setting += f"\n7️⃣更改便笺体力提醒阈值 \
                       \n   当前原神提醒阈值：{account.user_resin_threshold} \
                       \n   当前崩铁提醒阈值：{account.user_stamina_threshold}"
-    user_setting += "\n8️⃣更改每周开始提醒崩铁模拟宇宙积分完成情况的期限 \
+    user_setting += f"\n8️⃣更改每周开始提醒崩铁模拟宇宙积分完成情况的期限 \
                       \n   当前会在每周{account.user_su_notice_start_weekday}开始提醒模拟宇宙积分完成情况"
     user_setting += "\n9️⃣⚠️删除账户数据"
 
